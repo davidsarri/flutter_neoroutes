@@ -53,15 +53,14 @@ class MainController with ChangeNotifier {
       return;
     }
 
+    // ignore: unused_local_variable
     Position position = await Geolocator.getCurrentPosition();
     //LatLng newLocation = LatLng(position.latitude, position.longitude);
 
-    LatLng newLocation = LatLng(41.38870735431435, 2.1719955549104712);
+    LatLng newLocation = LatLng(41.3874, 2.1686);
     _userLocation = LatLng(41.38870735431435,
         2.1719955549104712); // ubicacio per defecte a barcelona per evitar problemes amb l'emulador
 
-    //41.38870735431435, 2.1719955549104712
-    //pl cat 41.3874, 2.1686
     if (_userLocation == null || _userLocation != newLocation) {
       _userLocation = newLocation;
       _setUserMarker();

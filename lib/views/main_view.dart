@@ -96,7 +96,7 @@ class _MainViewState extends State<MainView> {
                   left: 0,
                   right: 0,
                   child: Container(
-                    height: 200,
+                    height: 350,
                     color: Colors.white,
                     child: ListView.builder(
                       itemCount: controller.places.length,
