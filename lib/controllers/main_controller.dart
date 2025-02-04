@@ -10,6 +10,9 @@ class MainController with ChangeNotifier {
   final Set<Marker> _markers = {};
   List<Map<String, dynamic>> _places = [];
   final Set<Polyline> _polylines = {}; // Nova variable per emmagatzemar la ruta
+  bool isLoading = false;
+  bool searchedPlaces = false;
+  bool drawedmap = false;
 
   LatLng? get userLocation => _userLocation;
   Set<Marker> get markers => _markers;
@@ -82,8 +85,10 @@ class MainController with ChangeNotifier {
   }
 
   // Buscar llocs amb Google Places API
-  Future<void> searchPlaces(String query) async {
+  Future<void> searchPlaces(String query, String travelMode) async {
     if (_userLocation == null) return;
+    isLoading = true;
+    searchedPlaces = true;
 
     try {
       _places = await _placesService.searchPlaces(query, _userLocation!);
@@ -91,12 +96,15 @@ class MainController with ChangeNotifier {
         _places = _placesService.orderPlaces(
             _places, _userLocation!.latitude, _userLocation!.longitude);
         _updateMarkers();
-        _drawRouteToFirstPlace();
-        notifyListeners();
+        _drawRouteToFirstPlace(travelMode);
       }
     } catch (e) {
       debugPrint("Error buscant llocs: $e");
     }
+
+    isLoading = false;
+    searchedPlaces = false;
+    notifyListeners();
   }
 
   // Afegir marcadors al mapa
@@ -138,12 +146,13 @@ class MainController with ChangeNotifier {
     );
   }
 
-  Future<void> _drawRouteToFirstPlace() async {
+  Future<void> _drawRouteToFirstPlace(String travelMode) async {
     if (_places.isEmpty || _userLocation == null) return;
+    drawedmap = false;
 
     LatLng destination = LatLng(_places[0]["lat"], _places[0]["lng"]);
     List<LatLng> route =
-        await _placesService.getRoute(_userLocation!, destination);
+        await _placesService.getRoute(_userLocation!, destination, travelMode);
 
     _polylines.clear();
     _polylines.add(
@@ -154,6 +163,7 @@ class MainController with ChangeNotifier {
         width: 5,
       ),
     );
+    drawedmap = true;
     notifyListeners();
   }
 }

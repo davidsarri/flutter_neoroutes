@@ -4,7 +4,7 @@ import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neoroutes/styles/app_styles.dart';
-import 'package:neoroutes/views/main_view.dart';
+import 'package:neoroutes/views/search_view.dart';
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -59,11 +59,11 @@ class _SplashState extends State<Splash> {
             actions: [
               AuthStateChangeAction<UserCreated>((context, state) {
                 Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) => MainView()));
+                    MaterialPageRoute(builder: (context) => SearchView()));
               }),
               AuthStateChangeAction<SignedIn>((context, state) {
                 Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) => MainView()));
+                    MaterialPageRoute(builder: (context) => SearchView()));
               }),
             ],
           ),
@@ -71,7 +71,7 @@ class _SplashState extends State<Splash> {
       );
     } else {
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => MainView()));
+          context, MaterialPageRoute(builder: (context) => SearchView()));
     }
   }
 }
