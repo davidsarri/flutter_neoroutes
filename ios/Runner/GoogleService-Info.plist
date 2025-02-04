@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>719731019479-a03af62q260ahdku614qku9ccheg2oam.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.719731019479-a03af62q260ahdku614qku9ccheg2oam</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>719731019479-ccjiaskph73hm6emjjbbcfsfknpk3v7e.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyB3VLvwgRXqiXYVm_1BTFlMgIrTF8g4K8Q</string>
+	<key>GCM_SENDER_ID</key>
+	<string>719731019479</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.neoroutes</string>
+	<key>PROJECT_ID</key>
+	<string>neoroutes-6f21f</string>
+	<key>STORAGE_BUCKET</key>
+	<string>neoroutes-6f21f.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:719731019479:ios:713b601812db19e2406a92</string>
+</dict>
+</plist>

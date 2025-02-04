@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "719731019479",
+    "project_id": "neoroutes-6f21f",
+    "storage_bucket": "neoroutes-6f21f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719731019479:android:a65804a8a70f76c6406a92",
+        "android_client_info": {
+          "package_name": "com.example.neoroutes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "719731019479-ccjiaskph73hm6emjjbbcfsfknpk3v7e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.neoroutes",
+            "certificate_hash": "9d57e0d0644494b6114b963592550d1e97aac79a"
+          }
+        },
+        {
+          "client_id": "719731019479-vdu6ado4a3s9e3u1nr19vp54c8giqck2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFMn8BK6y1RPAVzUdFFSmeOXnEtO9bmYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "719731019479-vdu6ado4a3s9e3u1nr19vp54c8giqck2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "719731019479-a03af62q260ahdku614qku9ccheg2oam.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.neoroutes"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
