@@ -61,8 +61,8 @@ class MainController with ChangeNotifier {
     //LatLng newLocation = LatLng(position.latitude, position.longitude);
 
     LatLng newLocation = LatLng(41.3874, 2.1686);
-    _userLocation = LatLng(41.38870735431435,
-        2.1719955549104712); // ubicacio per defecte a barcelona per evitar problemes amb l'emulador
+    _userLocation = LatLng(41.3874,
+        2.1686); // ubicacio per defecte a barcelona per evitar problemes amb l'emulador
 
     if (_userLocation == null || _userLocation != newLocation) {
       _userLocation = newLocation;

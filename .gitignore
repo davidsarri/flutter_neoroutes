@@ -46,5 +46,6 @@ app.*.map.json
 
 # Evita pujar secrets
 .env
-android/local.properties
+/android/local.properties
+/android/gradle.properties
 ios/Flutter/.env.xcconfig
