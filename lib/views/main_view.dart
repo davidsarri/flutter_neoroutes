@@ -8,14 +8,18 @@ import 'package:provider/provider.dart';
 class MainView extends StatelessWidget {
   final String searchQuery;
   final String travelMode;
+  final String openMode;
 
   const MainView(
-      {super.key, required this.searchQuery, required this.travelMode});
+      {super.key,
+      required this.searchQuery,
+      required this.travelMode,
+      required this.openMode});
 
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<MainController>(context, listen: false);
-    controller.searchPlaces(searchQuery, travelMode);
+    controller.searchPlaces(searchQuery, travelMode, openMode);
 
     return Consumer<MainController>(
       builder: (context, controller, child) {
@@ -72,23 +76,23 @@ class MainView extends StatelessWidget {
                               var place = controller.places[index];
 
                               return ListTile(
-                                title: Text(place["name"]),
+                                title: Text(place?["name"]),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(place["address"]),
+                                    Text(place?["address"]),
                                     Row(
                                       children: [
                                         Text(
-                                            "${place["rating"] ?? "No rating"}"),
+                                            "${place?["rating"] ?? "No rating"}"),
                                         const SizedBox(width: 5),
-                                        if (place["rating"] != null)
-                                          starsRatingWidget(place["rating"])
+                                        if (place?["rating"] != null)
+                                          starsRatingWidget(place?["rating"])
                                       ],
                                     ),
                                   ],
                                 ),
-                                trailing: place["open_now"]
+                                trailing: place?["open_now"]
                                     ? const Icon(Icons.check,
                                         color: Colors.green)
                                     : const Icon(Icons.close,

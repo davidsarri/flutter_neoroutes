@@ -8,7 +8,7 @@ class MainController with ChangeNotifier {
   GoogleMapController? _mapController;
   LatLng? _userLocation; // Ubicació de l'usuari (pot ser null al principi)
   final Set<Marker> _markers = {};
-  List<Map<String, dynamic>> _places = [];
+  List<Map<String, dynamic>?> _places = [];
   final Set<Polyline> _polylines = {}; // Nova variable per emmagatzemar la ruta
   bool isLoading = false;
   bool searchedPlaces = false;
@@ -16,7 +16,7 @@ class MainController with ChangeNotifier {
 
   LatLng? get userLocation => _userLocation;
   Set<Marker> get markers => _markers;
-  List<Map<String, dynamic>> get places => _places;
+  List<Map<String, dynamic>?> get places => _places;
 
   MainController() {
     _getUserLocation();
@@ -85,16 +85,32 @@ class MainController with ChangeNotifier {
   }
 
   // Buscar llocs amb Google Places API
-  Future<void> searchPlaces(String query, String travelMode) async {
-    if (_userLocation == null) return;
+  Future<void> searchPlaces(
+      String query, String travelMode, String openMode) async {
+    if (_userLocation == null) {
+      debugPrint("Encara no tenim la ubicació de l'usuari, esperant...");
+      await _getUserLocation();
+    }
+
+    if (_userLocation == null) {
+      debugPrint("Error: No s'ha pogut obtenir la ubicació de l'usuari.");
+      return;
+    }
+
     isLoading = true;
     searchedPlaces = true;
 
     try {
-      _places = await _placesService.searchPlaces(query, _userLocation!);
+      _places =
+          await _placesService.searchPlaces(query, _userLocation!, openMode);
       if (_places.isNotEmpty) {
         _places = _placesService.orderPlaces(
-            _places, _userLocation!.latitude, _userLocation!.longitude);
+            _places
+                .where((place) => place != null)
+                .cast<Map<String, dynamic>>()
+                .toList(), // Filtrar els valors null
+            _userLocation!.latitude,
+            _userLocation!.longitude);
         _updateMarkers();
         _drawRouteToFirstPlace(travelMode);
       }
@@ -120,11 +136,11 @@ class MainController with ChangeNotifier {
     for (var place in _places) {
       _markers.add(
         Marker(
-          markerId: MarkerId(place["id"]),
-          position: LatLng(place["lat"], place["lng"]),
+          markerId: MarkerId(place?["id"]),
+          position: LatLng(place?["lat"], place?["lng"]),
           infoWindow: InfoWindow(
-            title: place["name"],
-            snippet: place["open_now"] ? "Obert ara" : "Tancat ara",
+            title: place?["name"],
+            snippet: place?["open_now"] ? "Obert ara" : "Tancat ara",
           ),
         ),
       );
@@ -150,7 +166,7 @@ class MainController with ChangeNotifier {
     if (_places.isEmpty || _userLocation == null) return;
     drawedmap = false;
 
-    LatLng destination = LatLng(_places[0]["lat"], _places[0]["lng"]);
+    LatLng destination = LatLng(_places[0]?["lat"], _places[0]?["lng"]);
     List<LatLng> route =
         await _placesService.getRoute(_userLocation!, destination, travelMode);
 

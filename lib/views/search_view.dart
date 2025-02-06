@@ -12,7 +12,8 @@ class SearchView extends StatefulWidget {
 
 class _SearchViewState extends State<SearchView> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedMode = "walking"; // Mode per defecte: a peu
+  String _selectedRouteMode = "walking";
+  String _selectedOpenMode = "onlyOpen";
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +34,7 @@ class _SearchViewState extends State<SearchView> {
 
             // Dropdown per escollir el tipus de ruta
             DropdownButtonFormField<String>(
-              value: _selectedMode,
+              value: _selectedRouteMode,
               decoration: const InputDecoration(
                 labelText: "Selecciona el tipus de ruta",
                 border: OutlineInputBorder(),
@@ -44,7 +45,26 @@ class _SearchViewState extends State<SearchView> {
               ],
               onChanged: (value) {
                 setState(() {
-                  _selectedMode = value!;
+                  _selectedRouteMode = value!;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedOpenMode,
+              decoration: const InputDecoration(
+                labelText:
+                    "Selecciona si vols tots els locals o nomes els obers",
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(
+                    value: "onlyOpen", child: Text("només oberts")),
+                DropdownMenuItem(value: "all", child: Text("tots")),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedOpenMode = value!;
                 });
               },
             ),
@@ -60,7 +80,8 @@ class _SearchViewState extends State<SearchView> {
                           Provider.of<MainController>(context, listen: false),
                       child: MainView(
                         searchQuery: _searchController.text,
-                        travelMode: _selectedMode,
+                        travelMode: _selectedRouteMode,
+                        openMode: _selectedOpenMode,
                       ),
                     ),
                   ),
