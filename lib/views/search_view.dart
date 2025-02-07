@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neoroutes/controllers/main_controller.dart';
 import 'package:neoroutes/views/main_view.dart';
+import 'package:neoroutes/widgets/build_dropdown_widget.dart';
 import 'package:provider/provider.dart';
 
 class SearchView extends StatefulWidget {
@@ -14,6 +15,8 @@ class _SearchViewState extends State<SearchView> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedRouteMode = "walking";
   String _selectedOpenMode = "onlyOpen";
+  String _selectedOrderMode = "proximity";
+  String _selectedSearchMode = "google";
 
   @override
   Widget build(BuildContext context) {
@@ -25,51 +28,50 @@ class _SearchViewState extends State<SearchView> {
           children: [
             TextField(
               controller: _searchController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Cerca un lloc",
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
-
-            // Dropdown per escollir el tipus de ruta
-            DropdownButtonFormField<String>(
+            buildDropdownWidget(
+              label: "Selecciona el tipus de ruta",
               value: _selectedRouteMode,
-              decoration: const InputDecoration(
-                labelText: "Selecciona el tipus de ruta",
-                border: OutlineInputBorder(),
-              ),
               items: const [
                 DropdownMenuItem(value: "walking", child: Text("A peu")),
                 DropdownMenuItem(value: "driving", child: Text("Conduint")),
               ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedRouteMode = value!;
-                });
-              },
+              onChanged: (value) => setState(() => _selectedRouteMode = value),
             ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
+            buildDropdownWidget(
+              label: "Selecciona si vols tots els locals o només els oberts",
               value: _selectedOpenMode,
-              decoration: const InputDecoration(
-                labelText:
-                    "Selecciona si vols tots els locals o nomes els obers",
-                border: OutlineInputBorder(),
-              ),
               items: const [
                 DropdownMenuItem(
-                    value: "onlyOpen", child: Text("només oberts")),
-                DropdownMenuItem(value: "all", child: Text("tots")),
+                    value: "onlyOpen", child: Text("Només oberts")),
+                DropdownMenuItem(value: "all", child: Text("Tots")),
               ],
-              onChanged: (value) {
-                setState(() {
-                  _selectedOpenMode = value!;
-                });
-              },
+              onChanged: (value) => setState(() => _selectedOpenMode = value),
+            ),
+            buildDropdownWidget(
+              label: "Selecciona com vols ordenar els resultats",
+              value: _selectedOrderMode,
+              items: const [
+                DropdownMenuItem(value: "proximity", child: Text("Proximitat")),
+                DropdownMenuItem(value: "rating", child: Text("Puntuació")),
+              ],
+              onChanged: (value) => setState(() => _selectedOrderMode = value),
+            ),
+            buildDropdownWidget(
+              label: "Selecciona el mode de cerca",
+              value: _selectedSearchMode,
+              items: const [
+                DropdownMenuItem(value: "google", child: Text("Google Maps")),
+                DropdownMenuItem(value: "chatGpt", child: Text("Chat GPT")),
+              ],
+              onChanged: (value) => setState(() => _selectedSearchMode = value),
             ),
             const SizedBox(height: 16),
-
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -82,6 +84,7 @@ class _SearchViewState extends State<SearchView> {
                         searchQuery: _searchController.text,
                         travelMode: _selectedRouteMode,
                         openMode: _selectedOpenMode,
+                        orderMode: _selectedOrderMode,
                       ),
                     ),
                   ),

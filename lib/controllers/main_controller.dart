@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:neoroutes/services/location_service.dart';
 import 'package:neoroutes/services/places_service.dart';
 
 class MainController with ChangeNotifier {
   final PlacesService _placesService = PlacesService();
   GoogleMapController? _mapController;
-  LatLng? _userLocation; // Ubicació de l'usuari (pot ser null al principi)
+  LatLng? _userLocation;
   final Set<Marker> _markers = {};
   List<Map<String, dynamic>?> _places = [];
-  final Set<Polyline> _polylines = {}; // Nova variable per emmagatzemar la ruta
+  final Set<Polyline> _polylines = {};
   bool isLoading = false;
   bool searchedPlaces = false;
   bool drawedmap = false;
+  String _userCity = "";
 
   LatLng? get userLocation => _userLocation;
   Set<Marker> get markers => _markers;
   List<Map<String, dynamic>?> get places => _places;
 
   MainController() {
-    _getUserLocation();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _getUserLocation();
+    await _getUserCity();
   }
 
   Set<Polyline> get getPolylines {
@@ -60,9 +67,11 @@ class MainController with ChangeNotifier {
     Position position = await Geolocator.getCurrentPosition();
     //LatLng newLocation = LatLng(position.latitude, position.longitude);
 
-    LatLng newLocation = LatLng(41.3874, 2.1686);
-    _userLocation = LatLng(41.3874,
-        2.1686); // ubicacio per defecte a barcelona per evitar problemes amb l'emulador
+    LatLng newLocation = LatLng(41.71157269622531, 0.9022013890006925);
+    _userLocation = LatLng(41.71157269622531,
+        0.9022013890006925); // ubicacio per defecte a barcelona per evitar problemes amb l'emulador
+
+    //ubicacio plaça catalunya: 41.3874, 2.1686
 
     if (_userLocation == null || _userLocation != newLocation) {
       _userLocation = newLocation;
@@ -85,8 +94,8 @@ class MainController with ChangeNotifier {
   }
 
   // Buscar llocs amb Google Places API
-  Future<void> searchPlaces(
-      String query, String travelMode, String openMode) async {
+  Future<void> searchPlaces(String query, String travelMode, String openMode,
+      String orderMode) async {
     if (_userLocation == null) {
       debugPrint("Encara no tenim la ubicació de l'usuari, esperant...");
       await _getUserLocation();
@@ -110,7 +119,8 @@ class MainController with ChangeNotifier {
                 .cast<Map<String, dynamic>>()
                 .toList(), // Filtrar els valors null
             _userLocation!.latitude,
-            _userLocation!.longitude);
+            _userLocation!.longitude,
+            orderMode);
         _updateMarkers();
         _drawRouteToFirstPlace(travelMode);
       }
@@ -181,5 +191,15 @@ class MainController with ChangeNotifier {
     );
     drawedmap = true;
     notifyListeners();
+  }
+
+  Future<void> _getUserCity() async {
+    try {
+      // 2️⃣ Obtenir la ciutat des de la ubicació
+      _userCity = await LocationService().getCityFromLocation(
+          _userLocation!.latitude, _userLocation!.longitude);
+    } catch (e) {
+      debugPrint("Error: $e");
+    }
   }
 }
