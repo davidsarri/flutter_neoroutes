@@ -51,3 +51,32 @@ app.*.map.json
 ios/Flutter/.env.xcconfig
 android/app/src/main/res/values/strings.xml
 ios/Runner/Info.plist
+
+# Firebase configuration files
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
+# Flutter build directory
+/build/
+# CocoaPods dependency directory (for iOS)
+ios/Pods/
+
+# Gradle files (for Android)
+android/.gradle/
+
+# Flutter specific files
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-version
+ios/Flutter/
+
+# Logs and environment specific files
+flutter_*.log
+pubspec.lock
+
+# Android specific files
+android/.idea/
+android/local.properties
+
+# macOS specific files
+.DS_Store
