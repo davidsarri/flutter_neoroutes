@@ -53,10 +53,18 @@ class MainController with ChangeNotifier {
             query, _locationController.userCity);
       }
 
-      if (_places.isNotEmpty) {
+      if (_places.isEmpty == false) {
+        _places = _placesService.orderPlaces(
+            _places,
+            _locationController.userLocation!.latitude,
+            _locationController.userLocation!.longitude,
+            orderMode);
+      }
+
+      /**  if (_places.isNotEmpty) {
         _mapController.updateMarkers(_places);
         _drawRouteToFirstPlace();
-      }
+      }**/
     } catch (e) {
       debugPrint("Error cercant llocs: $e");
     }

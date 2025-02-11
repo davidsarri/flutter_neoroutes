@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neoroutes/controllers/main_controller.dart';
-import 'package:neoroutes/views/main_view.dart';
+import 'package:neoroutes/views/search_results_view.dart';
 import 'package:neoroutes/widgets/build_dropdown_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -80,7 +80,7 @@ class _SearchViewState extends State<SearchView> {
                     builder: (context) => ChangeNotifierProvider.value(
                       value:
                           Provider.of<MainController>(context, listen: false),
-                      child: MainView(
+                      child: SearchResultsView(
                           searchQuery: _searchController.text,
                           travelMode: _selectedRouteMode,
                           openMode: _selectedOpenMode,

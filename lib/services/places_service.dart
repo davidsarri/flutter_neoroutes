@@ -14,6 +14,7 @@ class PlacesService {
   Future<List<Map<String, dynamic>>> searchPlaces(
       String query, LatLng userLocation, String openMode) async {
     String url = _googlePlacesApiUrl
+        .replaceAll('[QUERY]', query)
         .replaceAll('[LATITUT]', userLocation.latitude.toString())
         .replaceAll('[LONGITUD]', userLocation.longitude.toString())
         .replaceAll('[APIKEY]', _apiKey);
