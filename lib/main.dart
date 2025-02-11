@@ -4,7 +4,9 @@ import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:neoroutes/controllers/location_controller.dart';
 import 'package:neoroutes/controllers/main_controller.dart';
+import 'package:neoroutes/controllers/map_controller.dart';
 import 'package:neoroutes/firebase_options.dart';
 import 'package:neoroutes/styles/app_styles.dart';
 import 'package:neoroutes/views/splash.dart';
@@ -24,8 +26,12 @@ Future<void> main() async {
   await dotenv.load();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => MainController(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => MainController()),
+        ChangeNotifierProvider(create: (context) => LocationController()),
+        ChangeNotifierProvider(create: (context) => MapController()),
+      ],
       child: const MyApp(),
     ),
   );
