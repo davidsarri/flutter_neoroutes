@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class ChatGPTService {
   final String _apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
-  final String _apiUrl = "https://api.openai.com/v1/chat/completions";
+  final String _apiUrl = dotenv.env['OPENAI_API_URL'] ?? '';
 
   Future<List<Map<String, dynamic>>> queryChatGPT(
       String userQuery, String city) async {

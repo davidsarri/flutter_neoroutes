@@ -7,13 +7,16 @@ import 'package:http/http.dart' as http;
 
 class PlacesService {
   static final String _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+  final String _googleDirectionsApiUrl =
+      dotenv.env["GOOGLE_DIRECTIONS_API_URL"] ?? '';
+  final String _googlePlacesApiUrl = dotenv.env['GOOGLE_PLACES_API_URL'] ?? '';
 
   Future<List<Map<String, dynamic>>> searchPlaces(
       String query, LatLng userLocation, String openMode) async {
-    final String url =
-        "https://maps.googleapis.com/maps/api/place/textsearch/json?"
-        "query=$query&location=${userLocation.latitude},${userLocation.longitude}"
-        "&radius=5000&key=$_apiKey";
+    String url = _googlePlacesApiUrl
+        .replaceAll('[LATITUT]', userLocation.latitude.toString())
+        .replaceAll('[LONGITUD]', userLocation.longitude.toString())
+        .replaceAll('[APIKEY]', _apiKey);
 
     try {
       final response =
@@ -119,10 +122,13 @@ class PlacesService {
 
   Future<List<LatLng>> getRoute(
       LatLng origin, LatLng destination, String mode) async {
-    final String url = "https://maps.googleapis.com/maps/api/directions/json?"
-        "origin=${origin.latitude},${origin.longitude}"
-        "&destination=${destination.latitude},${destination.longitude}"
-        "&mode=$mode&key=$_apiKey";
+    String url = _googleDirectionsApiUrl
+        .replaceAll("[ORIGLATITUT]", origin.latitude.toString())
+        .replaceAll("[ORIGLONGITUD]", origin.longitude.toString())
+        .replaceAll("[DESTLATITUT]", destination.latitude.toString())
+        .replaceAll("[DESTLONGITUD]", destination.longitude.toString())
+        .replaceAll("[MODE]", mode)
+        .replaceAll("[APIKEY]", _apiKey);
 
     try {
       final response =
