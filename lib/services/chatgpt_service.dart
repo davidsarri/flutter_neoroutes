@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,6 +11,29 @@ class ChatGPTService {
 
   Future<List<Map<String, dynamic>>> queryChatGPT(
       String userQuery, String city) async {
+    if (_apiKey.isEmpty) {
+      debugPrint("Error: API Key de OpenAI no definida.");
+      return [];
+    }
+
+    final body = jsonEncode({
+      "model": "gpt-3.5-turbo",
+      "messages": [
+        {
+          "role": "system",
+          "content":
+              "Ets un assistent de viatges. Retorna només un JSON amb llocs a visitar."
+        },
+        {
+          "role": "user",
+          "content":
+              "Estic a $city. $userQuery. Torna només un JSON amb un array de llocs en aquest format: "
+                  "[{\"name\": \"Nom del lloc\", \"address\": \"Adreça\", \"lat\": 00.00, \"lng\": 00.00}]. "
+                  "No afegeixis cap altre text."
+        }
+      ]
+    });
+
     try {
       final response = await http.post(
         Uri.parse(_apiUrl),
@@ -17,76 +41,52 @@ class ChatGPTService {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_apiKey',
         },
-        body: jsonEncode({
-          "model": "gpt-3.5-turbo",
-          "messages": [
-            {
-              "role": "system",
-              "content":
-                  "Ets un assistent de viatges. Retorna només un JSON amb llocs a visitar."
-            },
-            {
-              "role": "user",
-              "content":
-                  "Estic a $city. $userQuery. Torna només un JSON amb un array de llocs en aquest format: "
-                      "[{\"name\": \"Nom del lloc\", \"address\": \"Adreça\", \"lat\": 00.00, \"lng\": 00.00}]. "
-                      "No afegeixis cap altre text."
-            }
-          ]
-        }),
+        body: body,
       );
 
       if (response.statusCode == 200) {
-        final utf8Decoded = utf8.decode(response.bodyBytes);
-        final data = jsonDecode(utf8Decoded);
-        String rawText = data['choices'][0]['message']['content'];
-
-        // **Intentar parsejar el JSON retornat**
-        List<Map<String, dynamic>> extractedPlaces =
-            _extractPlacesFromResponse(rawText);
-
-        // **Transformar els resultats per tenir la mateixa estructura que Google Maps**
-        return extractedPlaces.map((place) {
-          return {
-            "id": place["name"] + place["lat"].toString(), // Generar un ID únic
-            "name": place["name"],
-            "address": place["address"],
-            "lat": place["lat"],
-            "lng": place["lng"],
-            "rating":
-                0.0, // ChatGPT no retorna puntuació, posem 0.0 per defecte
-            "open_now": null // No tenim informació d'obertura, posem null
-          };
-        }).toList();
+        return _parseResponse(response.bodyBytes);
       } else {
-        throw Exception("Error en la resposta de ChatGPT: ${response.body}");
+        debugPrint("Error en la resposta de ChatGPT: ${response.body}");
       }
     } catch (e) {
       debugPrint("Error en queryChatGPT: $e");
-      return [];
     }
+    return [];
   }
 
-  List<Map<String, dynamic>> _extractPlacesFromResponse(String responseText) {
+  List<Map<String, dynamic>> _parseResponse(Uint8List responseBodyBytes) {
     try {
-      // **Eliminem caràcters innecessaris i ens assegurem que és un JSON vàlid**
-      responseText = responseText.trim();
+      final utf8Decoded = utf8.decode(responseBodyBytes);
+      final data = jsonDecode(utf8Decoded);
+      String rawText = data['choices'][0]['message']['content']?.trim() ?? '';
 
-      // Verifiquem si la resposta comença i acaba amb [ ] (llista JSON)
-      if (!responseText.startsWith("[") || !responseText.endsWith("]")) {
-        print("Resposta de ChatGPT no és un JSON vàlid: $responseText");
+      if (rawText.isEmpty ||
+          !rawText.startsWith("[") ||
+          !rawText.endsWith("]")) {
+        debugPrint("Resposta de ChatGPT no és un JSON vàlid: $rawText");
         return [];
       }
 
-      final extractedJson = jsonDecode(responseText);
+      final extractedJson = jsonDecode(rawText);
       if (extractedJson is List) {
-        return extractedJson.cast<Map<String, dynamic>>();
-      } else {
-        print("Resposta JSON no és una llista: $extractedJson");
+        return extractedJson.map((place) => _formatPlace(place)).toList();
       }
     } catch (e) {
-      print("Error analitzant JSON: $e");
+      debugPrint("Error analitzant JSON: $e");
     }
     return [];
+  }
+
+  Map<String, dynamic> _formatPlace(Map<String, dynamic> place) {
+    return {
+      "id": "${place["name"]}_${place["lat"]}",
+      "name": place["name"] ?? "Sense nom",
+      "address": place["address"] ?? "Sense adreça",
+      "lat": place["lat"] ?? 0.0,
+      "lng": place["lng"] ?? 0.0,
+      "rating": 0.0, // No tenim puntuació, posem 0.0 per defecte
+      "open_now": null // No tenim informació d'obertura, posem null
+    };
   }
 }

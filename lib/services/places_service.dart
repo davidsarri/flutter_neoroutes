@@ -8,98 +8,99 @@ import 'package:http/http.dart' as http;
 class PlacesService {
   static final String _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
-  Future<List<Map<String, dynamic>?>> searchPlaces(
+  Future<List<Map<String, dynamic>>> searchPlaces(
       String query, LatLng userLocation, String openMode) async {
-    String url =
-        "https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&location=${userLocation.latitude},${userLocation.longitude}&radius=5000&key=$_apiKey";
+    final String url =
+        "https://maps.googleapis.com/maps/api/place/textsearch/json?"
+        "query=$query&location=${userLocation.latitude},${userLocation.longitude}"
+        "&radius=5000&key=$_apiKey";
 
-    final response =
-        await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+    try {
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      List results = data["results"];
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> results = data["results"];
 
-      // Filtrar i garantir que no hi ha elements nulls
-      List<Map<String, dynamic>?> places = results.map((place) {
-        if (openMode == "all") {
-          return {
-            "id": place["place_id"],
-            "name": place["name"],
-            "address": place["formatted_address"],
-            "lat": place["geometry"]["location"]["lat"],
-            "lng": place["geometry"]["location"]["lng"],
-            "rating": place["rating"],
-            "open_now": place["opening_hours"]?["open_now"] ?? false
-          };
-        } else {
-          if (place["opening_hours"]?["open_now"] == true) {
-            return {
-              "id": place["place_id"],
-              "name": place["name"],
-              "address": place["formatted_address"],
-              "lat": place["geometry"]["location"]["lat"],
-              "lng": place["geometry"]["location"]["lng"],
-              "rating": place["rating"],
-              "open_now": place["opening_hours"]?["open_now"] ?? false
-            };
-          }
-        }
-      }).toList();
-
-      return places;
-    } else {
-      throw Exception("Error en obtenir els llocs: ${response.body}");
+        return results
+            .map((place) => _parsePlace(place, openMode))
+            .where((place) => place != null)
+            .cast<Map<String, dynamic>>()
+            .toList();
+      } else {
+        throw Exception("Error en obtenir els llocs: ${response.body}");
+      }
+    } catch (e) {
+      print("Error en searchPlaces: $e");
+      return [];
     }
   }
 
-  double distanceCalculator(
-      double lat1, double lon1, double lat2, double lon2) {
-    const double R = 6371; // Radi de la Terra en km
-    double dLat = (lat2 - lat1) * pi / 180;
-    double dLon = (lon2 - lon1) * pi / 180;
+  Map<String, dynamic>? _parsePlace(
+      Map<String, dynamic> place, String openMode) {
+    final bool isOpen = place["opening_hours"]?["open_now"] ?? false;
 
-    double a = sin(dLat / 2) * sin(dLat / 2) +
+    if (openMode == "open" && !isOpen) return null;
+
+    return {
+      "id": place["place_id"],
+      "name": place["name"],
+      "address": place["formatted_address"],
+      "lat": place["geometry"]["location"]["lat"],
+      "lng": place["geometry"]["location"]["lng"],
+      "rating": place["rating"] ?? 0.0,
+      "open_now": isOpen
+    };
+  }
+
+  double _distanceBetween(double lat1, double lon1, double lat2, double lon2) {
+    const double R = 6371; // Radi de la Terra en km
+    final double dLat = (lat2 - lat1) * pi / 180;
+    final double dLon = (lon2 - lon1) * pi / 180;
+
+    final double a = sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1 * pi / 180) *
             cos(lat2 * pi / 180) *
             sin(dLon / 2) *
             sin(dLon / 2);
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
-    return R * c; // Distància en km
+    return R * c;
   }
 
-  List<Map<String, dynamic>> orderPlaces(List<Map<String, dynamic>> llocs,
-      double userLat, double userLon, String orDerMode) {
-    // Si orDerMode és "rating", ordenar per la valoració (rating)
-    if (orDerMode == "rating") {
-      llocs.sort((a, b) => (b['rating'] ?? 0).compareTo(a['rating'] ?? 0));
+  List<Map<String, dynamic>> orderPlaces(List<Map<String, dynamic>> places,
+      double userLat, double userLon, String orderMode) {
+    if (places.isEmpty) return [];
+
+    if (orderMode == "rating") {
+      places.sort((a, b) => (b['rating'] ?? 0.0).compareTo(a['rating'] ?? 0.0));
     } else {
-      // Ordenar per proximitat a l'usuari si orDerMode no és "rating"
-      llocs.sort((a, b) => distanceCalculator(
+      places.sort((a, b) => _distanceBetween(
               userLat, userLon, a['lat'], a['lng'])
-          .compareTo(distanceCalculator(userLat, userLon, b['lat'], b['lng'])));
+          .compareTo(_distanceBetween(userLat, userLon, b['lat'], b['lng'])));
     }
 
-    List<Map<String, dynamic>> ordenats = [];
-    Set<int> visitats = {};
+    return _nearestNeighborOrdering(places);
+  }
 
-    if (llocs.isEmpty) return [];
+  List<Map<String, dynamic>> _nearestNeighborOrdering(
+      List<Map<String, dynamic>> places) {
+    List<Map<String, dynamic>> ordered = [];
+    Set<int> visited = {};
+    if (places.isEmpty) return [];
 
-    // Agafem el primer element (més proper a l'usuari)
-    Map<String, dynamic> actual = llocs.first;
-    ordenats.add(actual);
-    visitats.add(llocs.indexOf(actual));
+    ordered.add(places.first);
+    visited.add(0);
 
-    while (visitats.length < llocs.length) {
-      double minDist = double.infinity;
+    while (visited.length < places.length) {
       int indexMin = -1;
+      double minDist = double.infinity;
 
-      // Buscar el següent punt més proper al punt actual
-      for (int i = 0; i < llocs.length; i++) {
-        if (!visitats.contains(i)) {
-          double dist = distanceCalculator(
-              actual['lat'], actual['lng'], llocs[i]['lat'], llocs[i]['lng']);
+      for (int i = 0; i < places.length; i++) {
+        if (!visited.contains(i)) {
+          double dist = _distanceBetween(ordered.last['lat'],
+              ordered.last['lng'], places[i]['lat'], places[i]['lng']);
           if (dist < minDist) {
             minDist = dist;
             indexMin = i;
@@ -108,28 +109,34 @@ class PlacesService {
       }
 
       if (indexMin != -1) {
-        actual = llocs[indexMin];
-        ordenats.add(actual);
-        visitats.add(indexMin);
+        ordered.add(places[indexMin]);
+        visited.add(indexMin);
       }
     }
 
-    return ordenats;
+    return ordered;
   }
 
   Future<List<LatLng>> getRoute(
       LatLng origin, LatLng destination, String mode) async {
-    final String url =
-        "https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=$mode&key=$_apiKey";
+    final String url = "https://maps.googleapis.com/maps/api/directions/json?"
+        "origin=${origin.latitude},${origin.longitude}"
+        "&destination=${destination.latitude},${destination.longitude}"
+        "&mode=$mode&key=$_apiKey";
 
-    final response =
-        await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data["routes"].isNotEmpty) {
-        final points = data["routes"][0]["overview_polyline"]["points"];
-        return _decodePolyline(points);
+    try {
+      final response =
+          await http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data["routes"].isNotEmpty) {
+          final points = data["routes"][0]["overview_polyline"]["points"];
+          return _decodePolyline(points);
+        }
       }
+    } catch (e) {
+      print("Error en getRoute: $e");
     }
     return [];
   }
@@ -140,28 +147,33 @@ class PlacesService {
     int lat = 0, lng = 0;
 
     while (index < len) {
-      int shift = 0, result = 0;
-      int byte;
-      do {
-        byte = encoded.codeUnitAt(index++) - 63;
-        result |= (byte & 0x1F) << shift;
-        shift += 5;
-      } while (byte >= 0x20);
-      int deltaLat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lat += deltaLat;
-
-      shift = 0;
-      result = 0;
-      do {
-        byte = encoded.codeUnitAt(index++) - 63;
-        result |= (byte & 0x1F) << shift;
-        shift += 5;
-      } while (byte >= 0x20);
-      int deltaLng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
-      lng += deltaLng;
+      lat += _decodeNext(encoded, index);
+      index = _nextIndex(encoded, index);
+      lng += _decodeNext(encoded, index);
+      index = _nextIndex(encoded, index);
 
       polyline.add(LatLng(lat / 1E5, lng / 1E5));
     }
     return polyline;
+  }
+
+  int _decodeNext(String encoded, int index) {
+    int shift = 0, result = 0;
+    int byte;
+    do {
+      if (index >= encoded.length) break;
+      byte = encoded.codeUnitAt(index++) - 63;
+      result |= (byte & 0x1F) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    return (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+  }
+
+  int _nextIndex(String encoded, int index) {
+    int len = encoded.length;
+    while (index < len && encoded.codeUnitAt(index) >= 0x20) {
+      index++;
+    }
+    return index + 1;
   }
 }
