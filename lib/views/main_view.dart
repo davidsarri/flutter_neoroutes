@@ -10,18 +10,21 @@ class MainView extends StatelessWidget {
   final String travelMode;
   final String openMode;
   final String orderMode;
+  final String searchMode;
 
   const MainView(
       {super.key,
       required this.searchQuery,
       required this.travelMode,
       required this.openMode,
-      required this.orderMode});
+      required this.orderMode,
+      required this.searchMode});
 
   @override
   Widget build(BuildContext context) {
     final controller = Provider.of<MainController>(context, listen: false);
-    controller.searchPlaces(searchQuery, travelMode, openMode, orderMode);
+    controller.searchPlaces(
+        searchQuery, travelMode, openMode, orderMode, searchMode);
 
     return Consumer<MainController>(
       builder: (context, controller, child) {
@@ -94,7 +97,7 @@ class MainView extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                trailing: place?["open_now"]
+                                trailing: (place?["open_now"] ?? false)
                                     ? const Icon(Icons.check,
                                         color: Colors.green)
                                     : const Icon(Icons.close,

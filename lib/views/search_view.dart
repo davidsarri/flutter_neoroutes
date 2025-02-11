@@ -81,11 +81,11 @@ class _SearchViewState extends State<SearchView> {
                       value:
                           Provider.of<MainController>(context, listen: false),
                       child: MainView(
-                        searchQuery: _searchController.text,
-                        travelMode: _selectedRouteMode,
-                        openMode: _selectedOpenMode,
-                        orderMode: _selectedOrderMode,
-                      ),
+                          searchQuery: _searchController.text,
+                          travelMode: _selectedRouteMode,
+                          openMode: _selectedOpenMode,
+                          orderMode: _selectedOrderMode,
+                          searchMode: _selectedSearchMode),
                     ),
                   ),
                 );

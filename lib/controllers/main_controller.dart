@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:neoroutes/services/chatgpt_service.dart';
 import 'package:neoroutes/services/location_service.dart';
 import 'package:neoroutes/services/places_service.dart';
 
 class MainController with ChangeNotifier {
   final PlacesService _placesService = PlacesService();
+  final ChatGPTService _chatGptService = ChatGPTService();
+  final LocationService _locationService = LocationService();
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   final Set<Marker> _markers = {};
@@ -67,9 +70,9 @@ class MainController with ChangeNotifier {
     Position position = await Geolocator.getCurrentPosition();
     //LatLng newLocation = LatLng(position.latitude, position.longitude);
 
-    LatLng newLocation = LatLng(41.71157269622531, 0.9022013890006925);
-    _userLocation = LatLng(41.71157269622531,
-        0.9022013890006925); // ubicacio per defecte a barcelona per evitar problemes amb l'emulador
+    LatLng newLocation = LatLng(41.3874, 2.1686);
+    _userLocation = LatLng(41.3874,
+        2.1686); // ubicacio per defecte a barcelona per evitar problemes amb l'emulador
 
     //ubicacio plaça catalunya: 41.3874, 2.1686
 
@@ -95,7 +98,7 @@ class MainController with ChangeNotifier {
 
   // Buscar llocs amb Google Places API
   Future<void> searchPlaces(String query, String travelMode, String openMode,
-      String orderMode) async {
+      String orderMode, String searchMode) async {
     if (_userLocation == null) {
       debugPrint("Encara no tenim la ubicació de l'usuari, esperant...");
       await _getUserLocation();
@@ -109,20 +112,35 @@ class MainController with ChangeNotifier {
     isLoading = true;
     searchedPlaces = true;
 
+    if (_userCity == "") {
+      _userCity = await _locationService.getCityFromLocation(
+          _userLocation!.latitude, _userLocation!.longitude);
+    }
+
     try {
-      _places =
-          await _placesService.searchPlaces(query, _userLocation!, openMode);
+      if (searchMode == "google") {
+        _places =
+            await _placesService.searchPlaces(query, _userLocation!, openMode);
+      } else if (searchMode == "chatGpt") {
+        _places = await _chatGptService.queryChatGPT(query, _userCity ?? "");
+      } else {
+        debugPrint("Error: Mode de cerca desconegut: $searchMode");
+        return;
+      }
+
       if (_places.isNotEmpty) {
         _places = _placesService.orderPlaces(
             _places
                 .where((place) => place != null)
                 .cast<Map<String, dynamic>>()
-                .toList(), // Filtrar els valors null
+                .toList(),
             _userLocation!.latitude,
             _userLocation!.longitude,
             orderMode);
         _updateMarkers();
         _drawRouteToFirstPlace(travelMode);
+      } else {
+        debugPrint("No s'han trobat llocs amb el mode $searchMode.");
       }
     } catch (e) {
       debugPrint("Error buscant llocs: $e");
@@ -150,7 +168,7 @@ class MainController with ChangeNotifier {
           position: LatLng(place?["lat"], place?["lng"]),
           infoWindow: InfoWindow(
             title: place?["name"],
-            snippet: place?["open_now"] ? "Obert ara" : "Tancat ara",
+            snippet: (place?["open_now"] ?? false) ? "Obert ara" : "Tancat ara",
           ),
         ),
       );
