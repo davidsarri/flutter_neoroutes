@@ -86,7 +86,8 @@ class ChatGPTService {
       "lat": place["lat"] ?? 0.0,
       "lng": place["lng"] ?? 0.0,
       "rating": 0.0, // No tenim puntuació, posem 0.0 per defecte
-      "open_now": null // No tenim informació d'obertura, posem null
+      "open_now": null, // No tenim informació d'obertura, posem null
+      "photos": []
     };
   }
 }

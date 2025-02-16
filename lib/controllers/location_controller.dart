@@ -20,8 +20,9 @@ class LocationController with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchUserLocation() async {
+  Future<LatLng?> fetchUserLocation() async {
     await _getUserLocation();
+    return _userLocation;
   }
 
   Future<void> _getUserLocation() async {

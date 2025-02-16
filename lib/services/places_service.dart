@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -10,13 +11,27 @@ class PlacesService {
   final String _googleDirectionsApiUrl =
       dotenv.env["GOOGLE_DIRECTIONS_API_URL"] ?? '';
   final String _googlePlacesApiUrl = dotenv.env['GOOGLE_PLACES_API_URL'] ?? '';
+  final String _radiDefault = dotenv.env['RADI_CERCA_DEFECTE'] ?? '';
+  final String _imagesApiUrl = dotenv.env['GOOGLE_IMAGE_API_URL'] ?? '';
+
+  String getImageUrl(String photoReference) {
+    String url = _imagesApiUrl
+        .replaceAll('[PHOTOREFERENCE]', photoReference)
+        .replaceAll('[APIKEY]', _apiKey);
+
+    return url;
+  }
 
   Future<List<Map<String, dynamic>>> searchPlaces(
-      String query, LatLng userLocation, String openMode) async {
+      String query, LatLng userLocation, String openMode,
+      [String? radi]) async {
+    radi ??= _radiDefault;
+
     String url = _googlePlacesApiUrl
         .replaceAll('[QUERY]', query)
         .replaceAll('[LATITUT]', userLocation.latitude.toString())
         .replaceAll('[LONGITUD]', userLocation.longitude.toString())
+        .replaceAll('[RADI]', radi.toString())
         .replaceAll('[APIKEY]', _apiKey);
 
     try {
@@ -36,7 +51,7 @@ class PlacesService {
         throw Exception("Error en obtenir els llocs: ${response.body}");
       }
     } catch (e) {
-      print("Error en searchPlaces: $e");
+      debugPrint("Error en searchPlaces: $e");
       return [];
     }
   }
@@ -45,7 +60,7 @@ class PlacesService {
       Map<String, dynamic> place, String openMode) {
     final bool isOpen = place["opening_hours"]?["open_now"] ?? false;
 
-    if (openMode == "open" && !isOpen) return null;
+    if (openMode == "onlyOpen" && isOpen == false) return null;
 
     return {
       "id": place["place_id"],
@@ -54,7 +69,8 @@ class PlacesService {
       "lat": place["geometry"]["location"]["lat"],
       "lng": place["geometry"]["location"]["lng"],
       "rating": place["rating"] ?? 0.0,
-      "open_now": isOpen
+      "open_now": isOpen,
+      "photos": place["photos"]
     };
   }
 
@@ -71,6 +87,16 @@ class PlacesService {
     final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
     return R * c;
+  }
+
+  double distanciaEnMetres(
+      LatLng? userLocation, double latObjectiu, double lonObjectiu) {
+    if (userLocation == null) {
+      return 0.0;
+    }
+    return _distanceBetween(userLocation.latitude, userLocation.longitude,
+            latObjectiu, lonObjectiu) *
+        1000;
   }
 
   List<Map<String, dynamic>> orderPlaces(List<Map<String, dynamic>> places,
@@ -143,7 +169,7 @@ class PlacesService {
         }
       }
     } catch (e) {
-      print("Error en getRoute: $e");
+      debugPrint("Error en getRoute: $e");
     }
     return [];
   }
@@ -154,33 +180,58 @@ class PlacesService {
     int lat = 0, lng = 0;
 
     while (index < len) {
-      lat += _decodeNext(encoded, index);
-      index = _nextIndex(encoded, index);
-      lng += _decodeNext(encoded, index);
-      index = _nextIndex(encoded, index);
+      int shift = 0, result = 0;
+      int byte;
+
+      do {
+        byte = encoded.codeUnitAt(index++) - 63;
+        result |= (byte & 0x1F) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+
+      int deltaLat = (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+      lat += deltaLat;
+
+      shift = 0;
+      result = 0;
+
+      do {
+        byte = encoded.codeUnitAt(index++) - 63;
+        result |= (byte & 0x1F) << shift;
+        shift += 5;
+      } while (byte >= 0x20);
+
+      int deltaLng = (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+      lng += deltaLng;
 
       polyline.add(LatLng(lat / 1E5, lng / 1E5));
     }
+
     return polyline;
   }
 
   int _decodeNext(String encoded, int index) {
-    int shift = 0, result = 0;
-    int byte;
+    int b;
+    int shift = 0;
+    int result = 0;
+
     do {
-      if (index >= encoded.length) break;
-      byte = encoded.codeUnitAt(index++) - 63;
-      result |= (byte & 0x1F) << shift;
+      b = encoded.codeUnitAt(index) - 63;
+      index++;
+      result |= (b & 0x1f) << shift;
       shift += 5;
-    } while (byte >= 0x20);
-    return (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+    } while (b >= 0x20);
+    debugPrint("Decoded value: $result at index: $index");
+    return result;
   }
 
   int _nextIndex(String encoded, int index) {
-    int len = encoded.length;
-    while (index < len && encoded.codeUnitAt(index) >= 0x20) {
+    int b;
+    do {
+      b = encoded.codeUnitAt(index) - 63;
       index++;
-    }
-    return index + 1;
+    } while (b >= 0x20);
+    debugPrint("Next index: $index");
+    return index;
   }
 }

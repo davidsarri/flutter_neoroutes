@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:neoroutes/controllers/main_controller.dart';
+import 'package:neoroutes/views/place_details_view.dart';
 import 'package:neoroutes/widgets/stars_rating_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -25,6 +27,7 @@ class SearchResultsView extends StatefulWidget {
 
 class _SearchViewState extends State<SearchResultsView> {
   late Future<void> _searchFuture;
+  LatLng? userLocation;
 
   @override
   void initState() {
@@ -37,6 +40,15 @@ class _SearchViewState extends State<SearchResultsView> {
       widget.orderMode,
       widget.searchMode,
     );
+    if (controller.userLocation != null) {
+      userLocation = controller.userLocation;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          userLocation = controller.userLocation;
+        });
+      });
+    }
   }
 
   @override
@@ -54,15 +66,39 @@ class _SearchViewState extends State<SearchResultsView> {
             return Center(child: Text("Error: ${snapshot.error}"));
           }
 
+          if (controller.places.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  "No s'han trobat resultats amb els filtres escollits.",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
           return ListView.builder(
             itemCount: controller.places.length,
             itemBuilder: (context, index) {
               var place = controller.places[index];
 
               return GestureDetector(
-                onTap: () {
-                  // Acció en fer clic a un element
-                  print("Clicat: ${place["name"]}");
+                onTap: () async {
+                  if (controller.userLocation == null) {
+                    await controller.getUserLocation();
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PlaceDetailView(
+                        place: place,
+                        userLocation: controller.userLocation,
+                        travelMode: widget.travelMode,
+                      ),
+                    ),
+                  );
                 },
                 child: Card(
                   elevation: 3,
@@ -92,21 +128,24 @@ class _SearchViewState extends State<SearchResultsView> {
                           ),
                         ),
                         const SizedBox(height: 5),
-                        Text(
-                          "Obert ara: ${place["open_now"] == true ? "Sí" : "No"}",
-                          style: TextStyle(
-                            color: place["open_now"] == true
-                                ? Colors.green
-                                : Colors.red,
-                            fontWeight: FontWeight.bold,
+                        if (place["open_now"] != null) ...[
+                          Text(
+                            "Obert ara: ${place["open_now"] == true ? "Sí" : "No"}",
+                            style: TextStyle(
+                              color: place["open_now"] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 5),
+                          const SizedBox(height: 5),
+                        ],
                         Row(
                           children: [
-                            Text("${place["rating"] ?? "No rating"}"),
+                            if (place["rating"] != 0.0)
+                              Text("${place["rating"] ?? "No rating"}"),
                             const SizedBox(width: 5),
-                            if (place["rating"] != null)
+                            if (place["rating"] != 0.0)
                               starsRatingWidget(place["rating"]),
                           ],
                         ),
