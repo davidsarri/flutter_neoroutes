@@ -80,3 +80,5 @@ android/local.properties
 
 # macOS specific files
 .DS_Store
+
+/lib/firebase_options.dart
