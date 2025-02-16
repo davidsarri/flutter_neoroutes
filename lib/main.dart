@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'NeoRoutes',
       theme: ThemeData(
-        scaffoldBackgroundColor: AppStyles.honeydew,
+        scaffoldBackgroundColor: AppStyles.fonsApp,
         fontFamily: GoogleFonts.montserrat().fontFamily,
         useMaterial3: true,
       ),
